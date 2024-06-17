@@ -48,7 +48,20 @@ async function run() {
        const id = req.params.id;
        const query = {_id: new ObjectId(id)};
        const result = await bannerCollection.deleteOne(query);
-       console.log(result);
+       //console.log(result);
+       res.send(result);
+    })
+
+    app.patch('/banner/active/:id',async(req,res)=>{
+      await bannerCollection.updateMany({}, { $set: { isActive: 'false' } });
+       const id = req.params.id;
+       const query = {_id: new ObjectId(id)};
+       const updateDoc = {
+           $set: {
+            isActive: 'true',
+           }
+       }
+       const result = await bannerCollection.updateOne(query,updateDoc);
        res.send(result);
     })
 
