@@ -29,6 +29,7 @@ async function run() {
 
     const db = client.db("unknownDb");
     const bannerCollection = db.collection("banner");
+    const testCollection = db.collection("test");
 
 
     //banner api
@@ -63,6 +64,21 @@ async function run() {
        }
        const result = await bannerCollection.updateOne(query,updateDoc);
        res.send(result);
+    })
+
+    //selected banner
+    app.get('/banner/active',async(req,res)=>{
+       const result = await bannerCollection.findOne({isActive:'true'});
+       res.send(result);
+    })
+
+    //Banner Api Finished
+
+    //Test api starts from here
+
+    app.get('/test',async(req,res)=>{
+      const result = await testCollection.find().toArray();
+      res.send(result);
     })
 
     // Send a ping to confirm a successful connection
