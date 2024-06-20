@@ -30,6 +30,7 @@ async function run() {
     const db = client.db("unknownDb");
     const bannerCollection = db.collection("banner");
     const testCollection = db.collection("test");
+    const recommendationCollection = db.collection("recommendation");
 
 
     //banner api
@@ -120,6 +121,23 @@ async function run() {
       const result = await testCollection.deleteOne(query);
       res.send(result);
     })
+
+    // Test Api ends her
+
+
+    // Recommendation starts Here
+
+    app.post('/recommendation',async(req,res)=>{
+      const item = req.body;
+      const result = await recommendationCollection.insertOne(item);
+      res.send(result);
+    })
+
+    app.get('/recommendation',async(req,res)=>{
+      const result = await recommendationCollection.find().toArray();
+      res.send(result);
+    })
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
