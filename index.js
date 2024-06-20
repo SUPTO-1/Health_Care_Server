@@ -47,6 +47,13 @@ async function run() {
         res.send(result);
     })
 
+    app.get('/user/:email',async(req,res)=>{
+       const email = req.params.email;
+       const query = {email:email};
+       const result = await userCollection.findOne(query);
+       res.send(result);
+    })
+
     //banner api
 
     app.get("/banner",async(req,res)=>{
