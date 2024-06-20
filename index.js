@@ -54,6 +54,23 @@ async function run() {
        res.send(result);
     })
 
+    app.patch('/user/:id',async(req,res)=>{
+      const item = req.body;
+      const id = req.params.id;
+       const query = {_id: new ObjectId(id)};
+       const updatedDoc = {
+         $set:{
+           name: item.name,
+           bloodGroup: item.bloodGroup,
+           district: item.district,
+           upazila: item.upazila,
+           photo: item.photo
+         }
+       }
+       const result = await userCollection.updateOne(query,updatedDoc);
+       res.send(result);
+    })
+
     //banner api
 
     app.get("/banner",async(req,res)=>{
