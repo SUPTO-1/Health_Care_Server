@@ -31,7 +31,21 @@ async function run() {
     const bannerCollection = db.collection("banner");
     const testCollection = db.collection("test");
     const recommendationCollection = db.collection("recommendation");
+    const userCollection = db.collection("user");
 
+
+    // user related Api starts from here
+
+    app.get('/user',async(req,res)=>{
+        const result = await userCollection.find().toArray();
+        res.send(result);
+    })
+
+    app.post('/user',async(req,res)=>{
+        const user = req.body;
+        const result = await userCollection.insertOne(user);
+        res.send(result);
+    })
 
     //banner api
 
