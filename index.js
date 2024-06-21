@@ -106,7 +106,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/user/:email", async (req, res) => {
+    app.get("/user/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
       const result = await userCollection.findOne(query);
@@ -137,13 +137,13 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/banner", async (req, res) => {
+    app.post("/banner", verifyToken,verifyAdmin, async (req, res) => {
       const banner = req.body;
       const result = await bannerCollection.insertOne(banner);
       res.send(result);
     });
 
-    app.delete("/banner/:id", async (req, res) => {
+    app.delete("/banner/:id", verifyToken , verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await bannerCollection.deleteOne(query);
@@ -151,7 +151,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/banner/active/:id", async (req, res) => {
+    app.patch("/banner/active/:id", verifyToken , verifyAdmin, async (req, res) => {
       await bannerCollection.updateMany({}, { $set: { isActive: "false" } });
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -179,7 +179,7 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/test", async (req, res) => {
+    app.post("/test", verifyToken , verifyAdmin, async (req, res) => {
       const test = req.body;
       const result = await testCollection.insertOne(test);
       res.send(result);
@@ -193,7 +193,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/test/:id", async (req, res) => {
+    app.patch("/test/:id", verifyToken , verifyAdmin, async (req, res) => {
       const item = req.body;
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -211,7 +211,7 @@ async function run() {
       res.send(result);
     });
 
-    app.delete("/test/:id", async (req, res) => {
+    app.delete("/test/:id", verifyToken , verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await testCollection.deleteOne(query);
