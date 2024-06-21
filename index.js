@@ -32,6 +32,7 @@ async function run() {
     const recommendationCollection = db.collection("recommendation");
     const userCollection = db.collection("user");
     const reservationCollection = db.collection("reservation");
+    const resultCollection = db.collection("result");
 
     // JWT related Api
     app.post("/jwt", async (req, res) => {
@@ -275,6 +276,13 @@ async function run() {
       res.send(result);
     })
 
+    app.get('/reservation/forResult/:id',async (req, res)=>{
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await reservationCollection.findOne(query);
+      res.send(result);
+    })
+
     app.delete('/reservation/:id', verifyToken, async (req, res)=>{
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -288,6 +296,18 @@ async function run() {
       const result = await reservationCollection.find(query).toArray();
       res.send(result);
     })
+
+    // Test Result
+
+    app.get("/result", async (req, res) => {
+      const result = await resultCollection.find().toArray();
+      res.send(result);
+    });
+    app.post("/result", async (req, res) => {
+      const item = req.body;
+      const result = await resultCollection.insertOne(item);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
