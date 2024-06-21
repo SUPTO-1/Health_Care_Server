@@ -224,6 +224,21 @@ async function run() {
       res.send(result);
     });
 
+    app.put("/test/:id", verifyToken , async (req, res) => {
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)};
+      const oldData = await testCollection.findOne(filter);
+      const newData = parseInt(oldData.slot);
+      const updatedData = await testCollection.updateOne(
+        filter,
+        {
+          $set: {slot: newData-1},
+        }
+      );
+      res.send(updatedData);
+      
+    });
+
     // Test Api ends her
 
     // Recommendation starts Here
