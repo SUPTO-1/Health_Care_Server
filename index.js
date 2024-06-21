@@ -31,6 +31,7 @@ async function run() {
     const testCollection = db.collection("test");
     const recommendationCollection = db.collection("recommendation");
     const userCollection = db.collection("user");
+    const reservationCollection = db.collection("reservation");
 
     // JWT related Api
     app.post("/jwt", async (req, res) => {
@@ -128,7 +129,7 @@ async function run() {
       const result = await userCollection.updateOne(query, updatedDoc);
       res.send(result);
     });
-    app.get("/user/singleUser/:id", async (req, res) => {
+    app.get("/user/singleUser/:id",  async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await userCollection.findOne(query);
@@ -235,6 +236,20 @@ async function run() {
 
     app.get("/recommendation", async (req, res) => {
       const result = await recommendationCollection.find().toArray();
+      res.send(result);
+    });
+
+    // Recommendation ends here 
+
+    // Reservation Starts Here 
+
+    app.get("/reservation", async (req, res) => {
+      const result = await reservationCollection.find().toArray();
+      res.send(result);
+    });
+    app.post("/reservation", verifyToken, async (req, res) => {
+      const item = req.body;
+      const result = await reservationCollection.insertOne(item);
       res.send(result);
     });
 
