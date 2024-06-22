@@ -10,6 +10,8 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 app.use(cors());
 app.use(express.json());
 
+const stripe = require("stripe")('sk_test_51PRp6PIJ4ZwIIzxdli4zSPMHIJFlOzEBhAuYdAhPuJfGaxP9jvYUOd1KmwOQUimT0YBNGvTNMkDJJifQnreI3mog00HZ4Ww1fj');
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.8iumwdu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -34,6 +36,7 @@ async function run() {
     const reservationCollection = db.collection("reservation");
     const resultCollection = db.collection("result");
     const doctorCollection = db.collection("doctor");
+    const paymentCollection = db.collection("payments");
 
     // JWT related Api
     app.post("/jwt", async (req, res) => {
@@ -84,7 +87,7 @@ async function run() {
       res.send({ admin });
     });
 
-    app.patch("/user/admin/:id", verifyToken, verifyAdmin , async (req, res) => {
+    app.patch("/user/admin/:id", verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const updatedUser = {
@@ -98,7 +101,7 @@ async function run() {
 
     // user related Api starts from here
 
-    app.get("/user", verifyToken, verifyAdmin , async (req, res) => {
+    app.get("/user", verifyToken, verifyAdmin, async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result);
     });
@@ -131,7 +134,7 @@ async function run() {
       const result = await userCollection.updateOne(query, updatedDoc);
       res.send(result);
     });
-    app.get("/user/singleUser/:id",  async (req, res) => {
+    app.get("/user/singleUser/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await userCollection.findOne(query);
@@ -145,13 +148,13 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/banner", verifyToken,verifyAdmin, async (req, res) => {
+    app.post("/banner", verifyToken, verifyAdmin, async (req, res) => {
       const banner = req.body;
       const result = await bannerCollection.insertOne(banner);
       res.send(result);
     });
 
-    app.delete("/banner/:id", verifyToken , verifyAdmin, async (req, res) => {
+    app.delete("/banner/:id", verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await bannerCollection.deleteOne(query);
@@ -159,18 +162,23 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/banner/active/:id", verifyToken , verifyAdmin, async (req, res) => {
-      await bannerCollection.updateMany({}, { $set: { isActive: "false" } });
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const updateDoc = {
-        $set: {
-          isActive: "true",
-        },
-      };
-      const result = await bannerCollection.updateOne(query, updateDoc);
-      res.send(result);
-    });
+    app.patch(
+      "/banner/active/:id",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        await bannerCollection.updateMany({}, { $set: { isActive: "false" } });
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            isActive: "true",
+          },
+        };
+        const result = await bannerCollection.updateOne(query, updateDoc);
+        res.send(result);
+      }
+    );
 
     //selected banner
     app.get("/banner/active", async (req, res) => {
@@ -187,7 +195,7 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/test", verifyToken , verifyAdmin, async (req, res) => {
+    app.post("/test", verifyToken, verifyAdmin, async (req, res) => {
       const test = req.body;
       const result = await testCollection.insertOne(test);
       res.send(result);
@@ -201,7 +209,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/test/:id", verifyToken , verifyAdmin, async (req, res) => {
+    app.patch("/test/:id", verifyToken, verifyAdmin, async (req, res) => {
       const item = req.body;
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -219,26 +227,22 @@ async function run() {
       res.send(result);
     });
 
-    app.delete("/test/:id", verifyToken , verifyAdmin, async (req, res) => {
+    app.delete("/test/:id", verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await testCollection.deleteOne(query);
       res.send(result);
     });
 
-    app.put("/test/:id", verifyToken , async (req, res) => {
+    app.put("/test/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
-      const filter = {_id: new ObjectId(id)};
+      const filter = { _id: new ObjectId(id) };
       const oldData = await testCollection.findOne(filter);
       const newData = parseInt(oldData.slot);
-      const updatedData = await testCollection.updateOne(
-        filter,
-        {
-          $set: {slot: newData-1},
-        }
-      );
+      const updatedData = await testCollection.updateOne(filter, {
+        $set: { slot: newData - 1 },
+      });
       res.send(updatedData);
-      
     });
 
     // Test Api ends her
@@ -256,9 +260,9 @@ async function run() {
       res.send(result);
     });
 
-    // Recommendation ends here 
+    // Recommendation ends here
 
-    // Reservation Starts Here 
+    // Reservation Starts Here
 
     app.get("/reservation", async (req, res) => {
       const result = await reservationCollection.find().toArray();
@@ -270,33 +274,38 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/reservation/:email', verifyToken, async (req, res)=>{
+    app.get("/reservation/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
       const result = await reservationCollection.find(query).toArray();
       res.send(result);
-    })
+    });
 
-    app.get('/reservation/forResult/:id',async (req, res)=>{
+    app.get("/reservation/forResult/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await reservationCollection.findOne(query);
       res.send(result);
-    })
+    });
 
-    app.delete('/reservation/:id', verifyToken, async (req, res)=>{
+    app.delete("/reservation/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await reservationCollection.deleteOne(query);
       res.send(result);
-    })
+    });
 
-    app.get('/reservation/forAdmin/:testName', verifyToken , verifyAdmin, async (req, res)=>{
-      const testName = req.params.testName;
-      const query = { testName: testName };
-      const result = await reservationCollection.find(query).toArray();
-      res.send(result);
-    })
+    app.get(
+      "/reservation/forAdmin/:testName",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const testName = req.params.testName;
+        const query = { testName: testName };
+        const result = await reservationCollection.find(query).toArray();
+        res.send(result);
+      }
+    );
 
     // Test Result
 
@@ -309,12 +318,12 @@ async function run() {
       const result = await resultCollection.insertOne(item);
       res.send(result);
     });
-    app.get('/result/:email',async(req,res)=>{
+    app.get("/result/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
       const result = await resultCollection.find(query).toArray();
       res.send(result);
-    })
+    });
 
     //Doctor api starts here
 
@@ -323,18 +332,46 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/doctor", verifyToken , verifyAdmin, async (req, res) => {
+    app.post("/doctor", verifyToken, verifyAdmin, async (req, res) => {
       const item = req.body;
       const result = await doctorCollection.insertOne(item);
       res.send(result);
     });
 
-   app.get('/doctor/:id', async (req, res) => {
-    const id = req.params.id;
-    const query = { _id: new ObjectId(id) };
-    const result = await doctorCollection.findOne(query);
-    res.send(result);
-   })
+    app.get("/doctor/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await doctorCollection.findOne(query);
+      res.send(result);
+    });
+
+    //  payment gateway Stripe
+
+    app.post("/create-payment-intent", async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100);
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+
+    app.get("/payments/:email", async (req, res) => {
+      const query = { email: req.params.email };
+      const result = await paymentCollection.find(query).toArray();
+      res.send(result);
+    });
+    app.post("/payments", async (req, res) => {
+      const payment = req.body;
+      const paymentResult = await paymentCollection.insertOne(payment);
+      res.send({ paymentResult});
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
