@@ -33,6 +33,7 @@ async function run() {
     const userCollection = db.collection("user");
     const reservationCollection = db.collection("reservation");
     const resultCollection = db.collection("result");
+    const doctorCollection = db.collection("doctor");
 
     // JWT related Api
     app.post("/jwt", async (req, res) => {
@@ -314,6 +315,19 @@ async function run() {
       const result = await resultCollection.find(query).toArray();
       res.send(result);
     })
+
+    //Doctor api starts here
+
+    app.get("/doctor", async (req, res) => {
+      const result = await doctorCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.post("/doctor", verifyToken , verifyAdmin, async (req, res) => {
+      const item = req.body;
+      const result = await doctorCollection.insertOne(item);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
