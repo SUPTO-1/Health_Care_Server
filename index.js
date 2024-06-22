@@ -26,7 +26,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    //await client.connect();
 
     const db = client.db("unknownDb");
     const bannerCollection = db.collection("banner");
@@ -93,6 +93,18 @@ async function run() {
       const updatedUser = {
         $set: {
           role: "admin",
+        },
+      };
+      const result = await userCollection.updateOne(filter, updatedUser);
+      res.send(result);
+    });
+
+    app.patch("/user/block/:id", verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedUser = {
+        $set: {
+          status: "blocked",
         },
       };
       const result = await userCollection.updateOne(filter, updatedUser);
@@ -373,8 +385,46 @@ async function run() {
       res.send({ paymentResult});
     });
 
+
+    //Feature-Tests
+
+    app.get("/featured-tests",async(req,res)=>{
+      const threshold = 2;
+      const pipeline = [
+        {
+          $group:{
+            _id:{
+              testName:"$testName",
+              image:"$image",
+            },
+            count:{$sum:1},
+          }
+        },
+        {
+          $match:{
+            count:{$gte:threshold}
+          }
+        },
+        {
+          $project:{
+            _id:0,
+            testName:"$_id.testName",
+            image:"$_id.image",
+            count:1
+          }
+        },
+        {
+          $sort:{
+            count:-1
+          }
+        }
+      ];
+      const result = await reservationCollection.aggregate(pipeline).toArray();
+      res.send(result);
+    })
+
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    //await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
