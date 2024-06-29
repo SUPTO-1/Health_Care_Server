@@ -99,6 +99,18 @@ async function run() {
       res.send(result);
     });
 
+    app.patch('/user/user/:id', verifyToken, async (req, res) =>{
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedUser = {
+        $set: {
+          role: "user",
+        },
+      };
+      const result = await userCollection.updateOne(filter, updatedUser);
+      res.send(result);
+    })
+
     app.patch("/user/block/:id", verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -110,6 +122,19 @@ async function run() {
       const result = await userCollection.updateOne(filter, updatedUser);
       res.send(result);
     });
+
+
+    app.patch("/user/unblock/:id", verifyToken, verifyAdmin, async (req, res) =>{
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedUser = {
+        $set: {
+          status: "unblocked",
+        },
+      };
+      const result = await userCollection.updateOne(filter, updatedUser);
+      res.send(result);
+    })
 
     // user related Api starts from here
 
